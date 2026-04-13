@@ -1,0 +1,33 @@
+# 仓库内文本默认使用 LF（与 CI、Linux 构建一致）
+* text=auto eol=lf
+
+# Maven Wrapper
+/mvnw text eol=lf
+/.mvn/wrapper/maven-wrapper.properties text eol=lf
+
+# Windows 批处理须为 CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# 源码与配置
+*.java text diff=java
+*.xml text
+*.properties text
+*.yml text
+*.yaml text
+*.md text
+*.json text
+*.sql text
+
+# 二进制，禁止行尾转换
+*.jar binary
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.mp4 binary
+*.webm binary

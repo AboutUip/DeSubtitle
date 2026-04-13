@@ -1,0 +1,12 @@
+# IDE排除
+.idea
+
+# Sqlite数据库排除
+data
+
+# java构建目录排除
+target
+
+# toolkit 运行产物
+toolkit/logs/
+toolkit/desubtitle.pid

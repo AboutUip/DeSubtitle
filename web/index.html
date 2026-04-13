@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DeSubtitle</title>
+  <link rel="icon" type="image/svg+xml" href="/icons/logo.svg" />
+  <link rel="apple-touch-icon" href="/icons/logo.svg" />
+  <link rel="stylesheet" href="/styles/app.css" />
+</head>
+<body>
+  <div id="boot-veil" class="boot-veil" role="status" aria-live="polite">
+    <div class="boot-card ms-elevate">
+      <div id="boot-loader" class="boot-loader">
+        <img class="boot-logo" src="/icons/logo.svg" width="64" height="64" alt="DeSubtitle" decoding="async" />
+        <img class="boot-spinner" src="/icons/spinner.svg" width="40" height="40" alt="" decoding="async" aria-hidden="true" />
+        <p class="boot-title">正在连接服务…</p>
+      </div>
+      <div id="boot-init" class="boot-init hidden">
+        <div class="boot-init-brand">
+          <img class="boot-logo boot-logo--sm" src="/icons/logo.svg" width="40" height="40" alt="DeSubtitle" decoding="async" />
+          <h1 class="boot-heading">初始化</h1>
+        </div>
+        <p class="boot-hint">请配置阿里云访问密钥以启用去字幕</p>
+        <form id="boot-init-form" class="boot-init-form" novalidate>
+          <div id="field-ak" class="field">
+            <label for="ak">AccessKey ID</label>
+            <input id="ak" name="accessKeyId" type="text" autocomplete="username" />
+          </div>
+          <div id="field-sk" class="field">
+            <label for="sk">AccessKey Secret</label>
+            <input id="sk" name="accessKeySecret" type="password" autocomplete="current-password" />
+          </div>
+          <p id="init-err" class="inline-error hidden" role="alert"></p>
+          <button type="submit" id="btn-init-submit" class="ms-button ms-button-primary">保存并执行初始化</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="agreement-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="agreement-title">
+    <div class="modal-scrim"></div>
+    <div class="modal-panel ms-elevate">
+      <h2 id="agreement-title" class="modal-title">用户协议</h2>
+      <div id="agreement-body" class="agreement-body"></div>
+      <div class="modal-actions">
+        <button type="button" id="btn-agreement-decline" class="ms-button ms-button-secondary">不同意</button>
+        <button type="button" id="btn-agreement-accept" class="ms-button ms-button-primary">同意并继续</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-main" class="app-main hidden">
+    <header class="app-header ms-elevate">
+      <div class="app-brand">
+        <img class="app-logo" src="/icons/logo.svg" width="36" height="36" alt="" decoding="async" />
+        <span class="app-title">DeSubtitle - 量子像素 - 小萱baibai</span>
+      </div>
+      <span id="user-chip" class="user-chip"></span>
+    </header>
+
+    <section class="section">
+      <h2 class="section-title">指标</h2>
+      <p class="section-desc">RunMod:DebugTest</p>
+      <div id="metrics-grid" class="metrics-grid"></div>
+      <p id="metrics-captured" class="muted small"></p>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">视频去字幕</h2>
+      <p id="video-section-desc" class="section-desc muted"></p>
+      <div id="video-lanes-root" class="video-lanes-root" role="region" aria-label="多路视频处理"></div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">我的视频</h2>
+      <div id="video-list" class="video-list"></div>
+    </section>
+  </div>
+
+  <script type="module" src="/scripts/app.js"></script>
+</body>
+</html>
