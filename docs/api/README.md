@@ -6,9 +6,8 @@
 
 | 方法与路径 | 文档 | 摘要 |
 |------------|------|------|
-| `GET /life` | [life.md](./life.md) | 存活、提交 JWT 校验/刷新与内存指标快照（须带 `Authorization: Bearer`） |
+| `GET /life` | [life.md](./life.md) | 存活、JWT 校验/刷新、`videoProcessingLanes`、**`indicators` 指标快照**（须带 `Authorization: Bearer`） |
 | `GET /getAgreement` | [get-agreement.md](./get-agreement.md) | 无参，返回 `agreement.json` 中 `text` 的纯文本正文 |
-| `GET /getIndicator` | [get-indicator.md](./get-indicator.md) | 无参，返回纯内存指标快照 JSON |
 | `POST /uploadVideo` | [upload-video.md](./upload-video.md) | `multipart` 字段 `file`；配额见 `video_upload.lua`；落盘 `data/videos/` + 表 `user_videos` |
 | `POST /sendToDeSubtitle` | [send-to-desubtitle.md](./send-to-desubtitle.md) | 未过期本地上传批量提交阿里云擦字幕、轮询并下载成品至 `data/desubtitle/` |
 | `POST /sendVideoToDeSubtitle` | [send-video-to-desubtitle.md](./send-video-to-desubtitle.md) | 单条 `videoId` 提交去字幕（与批量接口按用户互斥） |

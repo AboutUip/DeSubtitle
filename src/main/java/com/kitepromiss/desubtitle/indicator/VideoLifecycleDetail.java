@@ -1,7 +1,7 @@
 package com.kitepromiss.desubtitle.indicator;
 
 /**
- * 单条 {@code user_videos} 在快照时刻的生命周期视图（供 {@code GET /getIndicator}、{@code GET /myVideos} 等 JSON 序列化）。
+ * 单条 {@code user_videos} 在快照时刻的生命周期视图（供 {@code GET /life} 的 {@code indicators}、{@code GET /myVideos} 等 JSON 序列化）。
  */
 public record VideoLifecycleDetail(
         String videoId,

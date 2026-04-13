@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import com.kitepromiss.desubtitle.api.IndicatorController;
+import com.kitepromiss.desubtitle.api.AgreementController;
 import com.kitepromiss.desubtitle.api.InitController;
 import com.kitepromiss.desubtitle.api.LifeController;
 import com.kitepromiss.desubtitle.api.UserTokenController;
-import com.kitepromiss.desubtitle.indicator.IndicatorSnapshotService;
+import com.kitepromiss.desubtitle.agreement.AgreementService;
 
 class MvcPublicEndpointRulesTest {
 
@@ -21,8 +21,8 @@ class MvcPublicEndpointRulesTest {
     }
 
     @Test
-    void indicatorAllowedBeforeInitButRequiresBearerAfter() {
-        IndicatorController c = new IndicatorController((IndicatorSnapshotService) null);
+    void agreementAllowedBeforeInitButRequiresBearerAfter() {
+        AgreementController c = new AgreementController((AgreementService) null);
         assertTrue(MvcPublicEndpointRules.allowsWithoutInitialization(c));
         assertFalse(MvcPublicEndpointRules.allowsWithoutBearer(c));
     }

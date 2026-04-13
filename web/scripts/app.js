@@ -11,10 +11,7 @@ const AGREEMENT_SESSION = "desubtitle_agreement_ok";
 /** 前端轮询 GET /life；服务端「在线用户」量表依赖此前端心跳。 */
 const LIFE_HEARTBEAT_INTERVAL_MS = 12_000;
 
-/** 前端轮询 GET /getIndicator 刷新指标卡片。 */
-const METRICS_REFRESH_INTERVAL_MS = 10_000;
-
-/** 全局 1s 递减：上传/成品剩余秒数仅在此计时；服务端时间由 GET /life（indicators.videoLifecycles）与 GET /myVideos 矫正。 */
+/** 全局 1s 递减：上传/成品剩余秒数、JWT 剩余秒数均在此计时；服务端时间由 GET /life（含 expiresInSeconds、indicators.videoLifecycles）与 GET /myVideos 矫正。 */
 const LIFECYCLE_TICK_MS = 1000;
 
 const el = (id) => document.getElementById(id);
@@ -54,7 +51,6 @@ function friendlyStartupError(e) {
 let blobUrlA = [];
 let blobUrlB = [];
 let lifeTimer = null;
-let metricsTimer = null;
 let lifecycleTickTimer = null;
 
 /** @type {Map<string, { upload: number, output: number | null }>} */
@@ -62,11 +58,13 @@ const lifecycleRemainByVideoId = new Map();
 let selectedLocalFile = [];
 let mainBound = false;
 
-let metricsFetchGen = 0;
+let lifeTickGen = 0;
 let videoListFetchGen = 0;
 let loadASeq = [];
 let loadBSeq = [];
 let metricsHydrated = false;
+/** 由 GET /life 的 expiresInSeconds 写入；与视频列表倒计时共用 1s 定时器递减。 */
+let jwtRemainSeconds = null;
 /** 各路独立忙碌；任一路忙时禁用列表「撤销」以防状态错乱。 */
 let laneBusy = [];
 
@@ -93,6 +91,20 @@ function revokeBlob(u) {
 
 function anyLaneBusy() {
   return laneBusy.some(Boolean);
+}
+
+function updateUserChip() {
+  const chip = el("user-chip");
+  if (!chip) {
+    return;
+  }
+  const sub = jwtSub(getToken());
+  let text = sub ? `用户 ${sub.slice(0, 8)}…` : "";
+  if (jwtRemainSeconds != null && Number.isFinite(jwtRemainSeconds)) {
+    const j = Math.max(0, Math.floor(jwtRemainSeconds));
+    text = text ? `${text} · JWT 剩余 ${j}s` : `JWT 剩余 ${j}s`;
+  }
+  chip.textContent = text;
 }
 
 function clampNonNegSec(n) {
@@ -172,6 +184,10 @@ function startLifecycleTick() {
         rec.output -= 1;
       }
     }
+    if (jwtRemainSeconds != null && jwtRemainSeconds > 0) {
+      jwtRemainSeconds -= 1;
+    }
+    updateUserChip();
     updateVideoListLifecycleSpans();
   };
   lifecycleTickTimer = setInterval(tick, LIFECYCLE_TICK_MS);
@@ -333,7 +349,8 @@ function mountVideoLaneElements() {
 function updateVideoSectionDesc() {
   const p = el("video-section-desc");
   if (!p) return;
-  p.textContent = "由于服务器算力有限,每个用户仅开放3路并发-小萱baibai";
+  const n = laneCount > 0 ? laneCount : 1;
+  p.textContent = `由于服务器算力有限,每个用户仅开放${n}路并发-小萱baibai`;
 }
 
 function remountVideoLanesFromCount(next) {
@@ -362,18 +379,10 @@ function remountVideoLanesFromCount(next) {
 async function bootstrapVideoLanesFromLife() {
   const root = el("video-lanes-root");
   root.innerHTML = '<p class="muted video-lanes-loading">正在同步布局…</p>';
-  let life = null;
-  try {
-    life = await api.life();
-    if (life?.tokenRefreshed && life.token) {
-      setToken(life.token);
-    }
-    mergeLifecycleFromLifeIndicators(life);
-    updateVideoListLifecycleSpans();
-  } catch {
-    /* 使用默认路数 */
+  const body = await pullLifeStateOnce({ silent: true });
+  if (!body) {
+    remountVideoLanesFromCount(3);
   }
-  remountVideoLanesFromCount(life?.videoProcessingLanes ?? 3);
 }
 
 function showBootLoader() {
@@ -544,23 +553,99 @@ async function showAgreementGate() {
   });
 }
 
+/**
+ * 拉取 GET /life：Token、indicators（指标卡片）、videoLifecycles 矫正、并行路数。
+ * @param {{ silent?: boolean }} options silent 为 false 时拉取失败会 toast（用于用户操作后主动刷新）。
+ */
+async function pullLifeStateOnce(options = {}) {
+  const { silent = true } = options;
+  const gen = ++lifeTickGen;
+  updateUserChip();
+  if (!metricsHydrated) {
+    renderMetricSkeletons();
+  }
+  try {
+    const body = await api.life();
+    if (gen !== lifeTickGen) {
+      return body;
+    }
+    if (body?.tokenRefreshed && body.token) {
+      setToken(body.token);
+    }
+    if (typeof body?.expiresInSeconds === "number") {
+      jwtRemainSeconds = Math.max(0, Math.floor(body.expiresInSeconds));
+    }
+    mergeLifecycleFromLifeIndicators(body);
+    updateVideoListLifecycleSpans();
+    if (body?.indicators) {
+      renderMetricsFromSnapshot(body.indicators);
+      metricsHydrated = true;
+    }
+    const want = applyVideoProcessingLanesFromLifePayload(body);
+    if (want !== laneCount) {
+      remountVideoLanesFromCount(want);
+    }
+    updateUserChip();
+    return body;
+  } catch {
+    if (gen !== lifeTickGen) {
+      return null;
+    }
+    el("metrics-captured").textContent = "指标拉取失败";
+    if (!silent) {
+      toast("指标暂时无法刷新", "err");
+    }
+    return null;
+  }
+}
+
+function renderMetricsFromSnapshot(snap) {
+  const sub = jwtSub(getToken());
+  const suf = metricSuffix(sub);
+  el("metrics-captured").textContent = snap.capturedAtEpochMillis
+    ? `快照时间：${new Date(snap.capturedAtEpochMillis).toLocaleString()}`
+    : "";
+  const grid = el("metrics-grid");
+  grid.innerHTML = "";
+
+  const online = snap.gauges?.online_users;
+  addMetricCard(
+    grid,
+    "在线 userId（近 life 心跳）",
+    online != null ? String(Math.round(online)) : "—",
+    "gauge online_users · 多标签/多 JWT 可能多计",
+  );
+
+  const up = snap.counters?.[`video_uploads_user_${suf}`];
+  addMetricCard(grid, "我的上传次数", up != null ? String(up) : "0", `counter …user_${suf}`);
+
+  const batch = snap.counters?.[`desubtitle_batch_requests_user_${suf}`];
+  const single = snap.counters?.[`desubtitle_single_requests_user_${suf}`];
+  addMetricCard(grid, "去字幕请求（批/单）", `${batch ?? 0} / ${single ?? 0}`, "desubtitle_*");
+
+  const okJobs = snap.counters?.[`desubtitle_job_success_user_${suf}`];
+  addMetricCard(grid, "去字幕成功落盘", okJobs != null ? String(okJobs) : "0", `success …${suf}`);
+
+  const rev = snap.counters?.[`video_revokes_user_${suf}`];
+  addMetricCard(grid, "我的撤销次数", rev != null ? String(rev) : "0", `revokes …${suf}`);
+
+  const mine = (snap.videoLifecycles || []).filter((v) => v.userId === sub);
+  addMetricCard(grid, "当前视频条数", String(mine.length), "videoLifecycles ∩ sub");
+
+  if (!prefersReducedMotion()) {
+    [...grid.children].forEach((c, i) => {
+      c.style.animationDelay = `${i * 45}ms`;
+      c.classList.add("metric-card--enter");
+    });
+  }
+}
+
 function startLifeHeartbeat() {
   if (lifeTimer) {
     clearInterval(lifeTimer);
   }
-  const tick = async () => {
-    try {
-      const body = await api.life();
-      if (body?.tokenRefreshed && body.token) {
-        setToken(body.token);
-      }
-      const want = applyVideoProcessingLanesFromLifePayload(body);
-      if (want !== laneCount) {
-        remountVideoLanesFromCount(want);
-      }
-    } catch {
-      /* 忽略 */
-    }
+  const tick = () => {
+    void pullLifeStateOnce({ silent: true });
   };
   tick();
   lifeTimer = setInterval(tick, LIFE_HEARTBEAT_INTERVAL_MS);
@@ -574,67 +659,6 @@ function renderMetricSkeletons() {
     d.className = "metric-card metric-card--skeleton";
     d.innerHTML = "<div class='sk-line sk-line--sm'></div><div class='sk-line sk-line--lg'></div><div class='sk-line sk-line--md'></div>";
     grid.appendChild(d);
-  }
-}
-
-async function refreshMetrics() {
-  const gen = ++metricsFetchGen;
-  const sub = jwtSub(getToken());
-  el("user-chip").textContent = sub ? `用户 ${sub.slice(0, 8)}…` : "";
-
-  if (!metricsHydrated) {
-    renderMetricSkeletons();
-  }
-
-  const suf = metricSuffix(sub);
-  try {
-    const snap = await api.getIndicator();
-    if (gen !== metricsFetchGen) {
-      return;
-    }
-    metricsHydrated = true;
-    el("metrics-captured").textContent = snap.capturedAtEpochMillis
-      ? `快照时间：${new Date(snap.capturedAtEpochMillis).toLocaleString()}`
-      : "";
-    const grid = el("metrics-grid");
-    grid.innerHTML = "";
-
-    const online = snap.gauges?.online_users;
-    addMetricCard(
-      grid,
-      "在线 userId（近 life 心跳）",
-      online != null ? String(Math.round(online)) : "—",
-      "gauge online_users · 多标签/多 JWT 可能多计",
-    );
-
-    const up = snap.counters?.[`video_uploads_user_${suf}`];
-    addMetricCard(grid, "我的上传次数", up != null ? String(up) : "0", `counter …user_${suf}`);
-
-    const batch = snap.counters?.[`desubtitle_batch_requests_user_${suf}`];
-    const single = snap.counters?.[`desubtitle_single_requests_user_${suf}`];
-    addMetricCard(grid, "去字幕请求（批/单）", `${batch ?? 0} / ${single ?? 0}`, "desubtitle_*");
-
-    const okJobs = snap.counters?.[`desubtitle_job_success_user_${suf}`];
-    addMetricCard(grid, "去字幕成功落盘", okJobs != null ? String(okJobs) : "0", `success …${suf}`);
-
-    const rev = snap.counters?.[`video_revokes_user_${suf}`];
-    addMetricCard(grid, "我的撤销次数", rev != null ? String(rev) : "0", `revokes …${suf}`);
-
-    const mine = (snap.videoLifecycles || []).filter((v) => v.userId === sub);
-    addMetricCard(grid, "当前视频条数", String(mine.length), "videoLifecycles ∩ sub");
-
-    if (!prefersReducedMotion()) {
-      [...grid.children].forEach((c, i) => {
-        c.style.animationDelay = `${i * 45}ms`;
-        c.classList.add("metric-card--enter");
-      });
-    }
-  } catch {
-    if (gen !== metricsFetchGen) {
-      return;
-    }
-    el("metrics-captured").textContent = "指标拉取失败";
-    toast("指标暂时无法刷新", "err");
   }
 }
 
@@ -741,7 +765,7 @@ async function refreshVideoList() {
             }
           }
           await refreshVideoList();
-          await refreshMetrics();
+          await pullLifeStateOnce({ silent: false });
           toast("已撤销", "ok");
         } catch (e) {
           toast(e.message || "撤销失败", "err");
@@ -895,7 +919,7 @@ function bindVideoLaneListeners() {
         selectedLocalFile[lane] = null;
         le(lane, "file-local").value = "";
         await refreshVideoList();
-        await refreshMetrics();
+        await pullLifeStateOnce({ silent: false });
         le(lane, "select-video").value = r.id;
         await bindVideoAFromServer(lane, r.id);
         toast("上传成功", "ok");
@@ -937,7 +961,7 @@ function bindVideoLaneListeners() {
           toast(msg, "err");
         }
         await refreshVideoList();
-        await refreshMetrics();
+        await pullLifeStateOnce({ silent: false });
       } catch (e) {
         const cred = friendlyNeedCredentialsMessage(e);
         if (cred) {
@@ -968,6 +992,8 @@ async function startMainAsync() {
   });
 
   window.addEventListener("desubtitle:auth-lost", () => {
+    jwtRemainSeconds = null;
+    updateUserChip();
     toast("登录已失效，请刷新页面", "err");
     setAllLanesBusy(true);
   });
@@ -976,9 +1002,6 @@ async function startMainAsync() {
     releaseAllMediaBlobs();
     if (lifeTimer) {
       clearInterval(lifeTimer);
-    }
-    if (metricsTimer) {
-      clearInterval(metricsTimer);
     }
     if (lifecycleTickTimer) {
       clearInterval(lifecycleTickTimer);
@@ -989,8 +1012,6 @@ async function startMainAsync() {
 
   startLifeHeartbeat();
   startLifecycleTick();
-  refreshMetrics();
-  metricsTimer = setInterval(refreshMetrics, METRICS_REFRESH_INTERVAL_MS);
 }
 
 async function main() {

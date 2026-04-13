@@ -2,7 +2,7 @@
 
 | 项目 | 说明 |
 |------|------|
-| 作用 | 将当前匿名用户（JWT `sub`）提交的视频保存到 **`data/videos/`**（随机文件名）；元数据写入 **`user_videos`**（含 **`expires_at`**，由 **`video_retention_minutes`** 决定）；递增计数器 **`video_uploads_user_<userId>`**；到期后 **`VideoLifecycleRecorder`** 自动删盘与删行（见 [get-indicator.md](./get-indicator.md) 的 **`videoExpiresInSeconds`**）。 |
+| 作用 | 将当前匿名用户（JWT `sub`）提交的视频保存到 **`data/videos/`**（随机文件名）；元数据写入 **`user_videos`**（含 **`expires_at`**，由 **`video_retention_minutes`** 决定）；递增计数器 **`video_uploads_user_<userId>`**；到期后 **`VideoLifecycleRecorder`** 自动删盘与删行（见 [life.md](./life.md) **`indicators.videoExpiresInSeconds`**）。 |
 | 方法与路径 | `POST /uploadVideo` |
 | 请求 | `multipart/form-data`，字段名 **`file`**（单文件）。 |
 | 请求头 | 初始化完成后须 **`Authorization: Bearer <JWT>`**（见 [bearer-user-auth.md](./bearer-user-auth.md)）；未完成初始化时先被门禁 **503**。 |

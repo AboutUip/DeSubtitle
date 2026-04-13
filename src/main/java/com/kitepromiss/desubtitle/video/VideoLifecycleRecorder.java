@@ -52,7 +52,7 @@ public class VideoLifecycleRecorder {
     }
 
     /**
-     * 全库视频在指定时刻的生命周期明细（{@code videoId} 字典序），供 {@code GET /getIndicator} 等使用。
+     * 全库视频在指定时刻的生命周期明细（{@code videoId} 字典序），供 {@code GET /life} 的 {@code indicators} 等使用。
      */
     public List<VideoLifecycleDetail> videoLifecyclesAtMillis(long nowEpochMs) {
         List<UserVideoEntity> all = new ArrayList<>(userVideoRepository.findAll());

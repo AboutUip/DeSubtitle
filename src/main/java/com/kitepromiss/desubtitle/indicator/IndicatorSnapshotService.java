@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.kitepromiss.desubtitle.video.VideoLifecycleRecorder;
 
 /**
- * 合并 {@link IndicatorRecorder} 与上传视频生命周期剩余时间，供 {@code GET /getIndicator} 与 {@code GET /life} 使用。
+ * 合并 {@link IndicatorRecorder} 与上传视频生命周期剩余时间，嵌入 {@code GET /life} 响应字段 {@code indicators}。
  */
 @Service
 public class IndicatorSnapshotService {

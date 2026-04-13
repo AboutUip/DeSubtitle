@@ -86,9 +86,20 @@ export const api = {
     return res.text();
   },
 
+  /**
+   * GET /life：存活、JWT 校验/刷新、expiresInSeconds、videoProcessingLanes、indicators（原指标快照）。
+   * @returns {Promise<{
+   *   alive: boolean,
+   *   submittedTokenValid: boolean,
+   *   tokenRefreshed: boolean,
+   *   token: string,
+   *   expiresInSeconds: number,
+   *   userId: string,
+   *   videoProcessingLanes: number,
+   *   indicators?: Record<string, unknown>
+   * }>}
+   */
   life: () => apiFetch("/life", { method: "GET" }),
-
-  getIndicator: () => apiFetch("/getIndicator", { method: "GET" }),
 
   myVideos: () => apiFetch("/myVideos", { method: "GET" }),
 

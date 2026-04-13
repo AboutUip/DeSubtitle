@@ -10,7 +10,7 @@
 | 成功响应 | **204 No Content**，无正文。 |
 | **401** | `{"error":"missing_user_context"}` |
 | **404** | `{"error":"video_not_found"}`（id 不存在或不属于当前用户，统一 404）。 |
-| 副作用 | 删盘、删库行；递增指标 **`video_revokes_user_<suffix>`**（见 [get-indicator.md](./get-indicator.md)）。与 **`POST /sendToDeSubtitle`** / **`POST /sendVideoToDeSubtitle`** 共用 **`UserIdStripeLock`**，同一用户不会并发撤销与去字幕。 |
+| 副作用 | 删盘、删库行；递增指标 **`video_revokes_user_<suffix>`**（见 [life.md](./life.md) **`indicators.counters`**）。与 **`POST /sendToDeSubtitle`** / **`POST /sendVideoToDeSubtitle`** 共用 **`UserIdStripeLock`**，同一用户不会并发撤销与去字幕。 |
 | 实现锚点 | `UserVideoController`、`UserVideoRevocationService`、`UserVideoNotFoundHandler` |
 
 目录索引见 [README.md](./README.md)。

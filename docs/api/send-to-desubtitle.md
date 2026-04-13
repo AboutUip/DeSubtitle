@@ -13,7 +13,7 @@
 | 配置 | **`desubtitle_output_retention_minutes`**（默认 10）：成品在 `data/desubtitle/` 保留分钟数；**`desubtitle_poll_timeout_minutes`**（默认 10）：单条任务在本请求内轮询最久分钟数。见 [../config/lua-video_upload.md](../config/lua-video_upload.md)。 |
 | 副作用 | 读写 `user_videos`；写 `data/desubtitle/`；调用阿里云与厂商临时 URL。 |
 | 并发 | 同一 JWT `sub` 下，本接口、**`POST /sendVideoToDeSubtitle`** 与 **`DELETE /userVideo/{id}`** 在 **`UserIdStripeLock`** 上互斥（与 **`POST /uploadVideo`** 配额 stripe 独立），避免撤销与去字幕交错、并行重复提交。 |
-| 指标 | 每次调用递增 **`desubtitle_batch_requests_user_<suffix>`**；每条 **`outcome=success`** 递增 **`desubtitle_job_success_user_<suffix>`**（见 [get-indicator.md](./get-indicator.md)）。 |
+| 指标 | 每次调用递增 **`desubtitle_batch_requests_user_<suffix>`**；每条 **`outcome=success`** 递增 **`desubtitle_job_success_user_<suffix>`**（见 [life.md](./life.md) **`indicators.counters`**）。 |
 | 实现锚点 | `SendToDeSubtitleController`、`SendToDeSubtitleService`、`VideoenhanSubtitleEraseOperations`、`DefaultVideoenhanSubtitleEraseOperations`、`AliyunAccessKeyResolver`、`UserVideoEntity`、`UserVideoRepository`、`VideoLifecycleRecorder`、`UserVideoDesubtitleSqliteMigration`、`VideoUploadLuaSettings` |
 
 目录索引见 [README.md](./README.md)。

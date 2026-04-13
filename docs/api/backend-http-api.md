@@ -2,7 +2,7 @@
 
 本文描述当前 Spring Boot 应用**实际提供的 HTTP 行为**（以仓库内源码为准），并约定后续 REST 文档的写法。监听地址与端口由启动配置决定（例如 `server.port`，可由 `config/lua/ports.lua` 经 `StartupLuaPorts` 注入）；下文路径均为**相对服务根路径**的 URI。
 
-**按路径拆分的 API 说明**：每个由 Controller 暴露的 HTTP 端点对应 **`docs/api/` 下独立 Markdown**（如 [life.md](./life.md)、[get-agreement.md](./get-agreement.md)、[get-indicator.md](./get-indicator.md)、[get-user-token.md](./get-user-token.md)、[bearer-user-auth.md](./bearer-user-auth.md)、[init-status.md](./init-status.md)、[init-credentials.md](./init-credentials.md)、[init.md](./init.md)），本文不再重复其字段级说明。
+**按路径拆分的 API 说明**：每个由 Controller 暴露的 HTTP 端点对应 **`docs/api/` 下独立 Markdown**（如 [life.md](./life.md)、[get-agreement.md](./get-agreement.md)、[get-user-token.md](./get-user-token.md)、[bearer-user-auth.md](./bearer-user-auth.md)、[init-status.md](./init-status.md)、[init-credentials.md](./init-credentials.md)、[init.md](./init.md)），本文不再重复其字段级说明。
 
 ---
 
@@ -83,7 +83,7 @@
 ### 2.1 当前状态
 
 - 仓库 **尚未** 注册映射到 **`/api/**`** 的业务接口；存活探测 **`GET /life`** 有独立文档 [life.md](./life.md)。
-- 除 [bearer-user-auth.md](./bearer-user-auth.md) 所列**全局拦截器不要求 Bearer** 的路径（**`GET /getUserToken`**、**init 三接口**、**`GET /life`**、错误控制器）外，其它 **MVC 控制器**在通过初始化门禁后均须由拦截器校验 **`Authorization: Bearer <JWT>`**（JWT 来自 [get-user-token.md](./get-user-token.md)）。**`GET /life`** 虽免拦截器，但**仍须**在头中附带 Bearer，由 [life.md](./life.md) 约定。**`GET /getAgreement`**、**`GET /getIndicator`** 须走拦截器校验。
+- 除 [bearer-user-auth.md](./bearer-user-auth.md) 所列**全局拦截器不要求 Bearer** 的路径（**`GET /getUserToken`**、**init 三接口**、**`GET /life`**、错误控制器）外，其它 **MVC 控制器**在通过初始化门禁后均须由拦截器校验 **`Authorization: Bearer <JWT>`**（JWT 来自 [get-user-token.md](./get-user-token.md)）。**`GET /life`** 虽免拦截器，但**仍须**在头中附带 Bearer，由 [life.md](./life.md) 约定。**`GET /getAgreement`** 须走拦截器校验。
 - 架构约定：未来业务接口应放在 **`/api/**`** 下，避免与前端路由及静态文件名冲突（见 `WebDirectoryResourceConfig` 类注释与 [../architectuure/runtime-boundaries.md](../architectuure/runtime-boundaries.md)）。
 
 ### 2.2 新增 REST 端点时文档应写清的内容
@@ -109,9 +109,8 @@
 |------|-----------|
 | 静态目录、`/**`、SPA 回退 | `com.kitepromiss.desubtitle.web.WebDirectoryResourceConfig` |
 | 根路径重定向 | 同上，`addViewControllers` |
-| `GET /life`（细则见 [life.md](./life.md)） | `com.kitepromiss.desubtitle.api.LifeController` |
+| `GET /life`（细则见 [life.md](./life.md)；含 `indicators` 快照） | `com.kitepromiss.desubtitle.api.LifeController`、`IndicatorSnapshotService`、`IndicatorRecorder`、`VideoLifecycleRecorder`、`InMemoryIndicatorRegistry` |
 | `GET /getAgreement`（细则见 [get-agreement.md](./get-agreement.md)） | `com.kitepromiss.desubtitle.api.AgreementController`、`AgreementService` |
-| `GET /getIndicator`（细则见 [get-indicator.md](./get-indicator.md)） | `IndicatorController`、`IndicatorSnapshotService`、`IndicatorRecorder`、`VideoLifecycleRecorder`、`InMemoryIndicatorRegistry` |
 | `GET /getUserToken`（细则见 [get-user-token.md](./get-user-token.md)） | `UserTokenController`、`UserJwtIssuerService`、`UserTokenRepository`、`UserJwtSignatureSupport` |
 | `POST /uploadVideo`（细则见 [upload-video.md](./upload-video.md)） | `VideoUploadController`、`VideoUploadService`、`UserVideoRepository`、`VideoUploadLuaSettings` |
 | `POST /sendToDeSubtitle`（细则见 [send-to-desubtitle.md](./send-to-desubtitle.md)） | `SendToDeSubtitleController`、`SendToDeSubtitleService`、`UserIdStripeLock`、`VideoenhanSubtitleEraseOperations`、`DefaultVideoenhanSubtitleEraseOperations`、`AliyunCredentialsSource`、`AliyunAccessKeyResolver`、`UserVideoRepository`、`VideoUploadLuaSettings`、`VideoLifecycleRecorder`、`IndicatorRecorder` |
@@ -127,7 +126,7 @@
 | AccessKey 引导存储 | `credential` 包内实体、仓库、`AliyunCredentialSetupService`、`AliyunCredentialInitBridge`、`CredentialInitPrecondition`、`MissingAliyunCredentialsException` |
 | 初始化完成前/执行中的 API 门禁（细则见 [init.md](./init.md)） | `InitializationGateInterceptor`、`InitializationAccessGate`、`InitializationWebConfiguration`（并注册 `AnonymousUserBearerInterceptor`） |
 | `POST /init` 全进程互斥 | `InitExecutionMutex`、`ConcurrentInitInProgressException` |
-| 行为回归测试 | `WebDirectoryResourceConfigTest`、`LifeControllerTest`、`InitControllerTest`、`InitServiceTest`、`InitializationGateInterceptorTest`、`MvcPublicEndpointRulesTest`、`IndicatorControllerTest`、`InMemoryIndicatorRegistryTest`、`VideoLifecycleRecorderTest`、`VideoUploadControllerTest`、`VideoUploadControllerQuotaTest`、`VideoUploadServiceTest`、`VideoUploadLuaSettingsTest`、`SendToDeSubtitleServiceTest`、`UserVideoStreamServiceTest`、`UserDataManagerTest`、`UserTokenControllerTest`、`UserJwtIssuerServiceTest`、`UserTokenLuaSettingsTest`、`SqliteConcurrencyControllerTest`、`AnonymousUserBearerInterceptorTest`、`UserJwtAuthenticationServiceTest` |
+| 行为回归测试 | `WebDirectoryResourceConfigTest`、`LifeControllerTest`、`InitControllerTest`、`InitServiceTest`、`InitializationGateInterceptorTest`、`MvcPublicEndpointRulesTest`、`IndicatorSnapshotServiceShapeTest`、`InMemoryIndicatorRegistryTest`、`VideoLifecycleRecorderTest`、`VideoUploadControllerTest`、`VideoUploadControllerQuotaTest`、`VideoUploadServiceTest`、`VideoUploadLuaSettingsTest`、`SendToDeSubtitleServiceTest`、`UserVideoStreamServiceTest`、`UserDataManagerTest`、`UserTokenControllerTest`、`UserJwtIssuerServiceTest`、`UserTokenLuaSettingsTest`、`SqliteConcurrencyControllerTest`、`AnonymousUserBearerInterceptorTest`、`UserJwtAuthenticationServiceTest` |
 | 工作目录路径 Bean | `WorkspacePaths`、`WorkspaceConfiguration`（`com.kitepromiss.desubtitle.workspace`） |
 
 修改上述类时，**须同步更新**对应端点专文与本文相关小节，避免文档与实现脱节。

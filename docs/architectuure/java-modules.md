@@ -24,7 +24,6 @@
 | `ConcurrentInitInProgressException`（`…init`） | 互斥抢锁失败时抛出，由 `InitController` 映射为 HTTP 409。 |
 | `LifeController`（`…api`） | 提供 `GET /life`：须带头 {@code Authorization: Bearer …}（不经全局 Bearer 拦截器）；返回存活、token 校验/按需刷新及内存指标快照 JSON（{@code LifeStatusPayload}）。 |
 | `AgreementController`（`…api`） | `GET /getAgreement`：无参，返回 {@code agreement.json} 中 {@code text} 的纯文本。 |
-| `IndicatorController`（`…api`） | `GET /getIndicator`：无参，返回纯内存指标快照 JSON（`IndicatorSnapshot`）。 |
 | `IndicatorRecorder`（`…indicator`，接口） | 内部记录计数器、量表；默认 Bean `InMemoryIndicatorRegistry`。 |
 | `InMemoryIndicatorRegistry`（`…indicator`） | 线程安全纯内存指标；`snapshot()` 供 HTTP 与内部共用。 |
 | `LifeOnlineUserTracker`（`…indicator`） | 在每次成功 `GET /life` 后按 `userId` 更新心跳并写入量表 `online_users`（与提交 JWT 是否有效无关）。 |
@@ -87,5 +86,5 @@
 | `UserVideoRevocationService`（`…video`） | 校验所有者后删源/成品文件与库行；递增撤销计数器；与去字幕同锁互斥。 |
 | `UserVideoNotFoundException`（`…video`） | id 不存在或非本用户时抛出。 |
 | `UserVideoNotFoundHandler`（`…api`） | 将上述异常映射为 HTTP 404 JSON。 |
-| `IndicatorSnapshotService`（`…indicator`） | 合并 `IndicatorRecorder.snapshot()` 与 `VideoLifecycleRecorder` 的 `videoExpiresInSeconds` 与 `videoLifecycles`。 |
+| `IndicatorSnapshotService`（`…indicator`） | 合并 `IndicatorRecorder.snapshot()` 与 `VideoLifecycleRecorder` 的 `videoExpiresInSeconds` 与 `videoLifecycles`；供 `GET /life` 的 `indicators` 字段序列化。 |
 | `WorkspaceConfiguration`（`…workspace`） | 注册 `WorkspacePaths` Bean。 |

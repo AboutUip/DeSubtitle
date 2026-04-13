@@ -1,7 +1,6 @@
 package com.kitepromiss.desubtitle.web;
 
 import com.kitepromiss.desubtitle.api.AgreementController;
-import com.kitepromiss.desubtitle.api.IndicatorController;
 import com.kitepromiss.desubtitle.api.InitController;
 import com.kitepromiss.desubtitle.api.InitCredentialController;
 import com.kitepromiss.desubtitle.api.InitStatusController;
@@ -24,7 +23,6 @@ public final class MvcPublicEndpointRules {
         }
         return handlerBean instanceof LifeController
                 || handlerBean instanceof AgreementController
-                || handlerBean instanceof IndicatorController
                 || handlerBean instanceof UserTokenController
                 || handlerBean instanceof InitController
                 || handlerBean instanceof InitStatusController

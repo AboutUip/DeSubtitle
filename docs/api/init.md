@@ -25,8 +25,8 @@
 | 失败响应 | **428** 缺密钥；**409** 互斥；I/O **500**；其它未捕获异常由 Spring 处理为 5xx。 |
 | 实现类 | `InitController`、`InitService`、`AliyunCredentialInitBridge`、`CredentialInitPrecondition` |
 | 回归测试 | `InitControllerTest`、`InitServiceTest`、`InitExecutionMutexTest`、`InitializationGateInterceptorTest` |
-| 访问门禁 | 未完成初始化时，除下文路径外，其它 Spring MVC 控制器 **503**（`not_initialized` / `initializing`）。静态资源不受影响。白名单与 **`MvcPublicEndpointRules#allowsWithoutInitialization`** 一致：`GET /life`、`GET /getAgreement`、`GET /getIndicator`、`GET /getUserToken`、`GET /init/status`、`POST /init/credentials`、`POST /init`。 |
-| Bearer JWT | 初始化完成后，**全局拦截器**对 **`GET /getUserToken`**、**init 三接口**、**`GET /life`** 不要求 Bearer；其中 **`GET /life`** 仍须在头中附带 **`Authorization: Bearer <JWT>`**（由控制器自处理，见 [life.md](./life.md)）。**`GET /getAgreement`**、**`GET /getIndicator`** 等须由拦截器校验 Bearer（见 [bearer-user-auth.md](./bearer-user-auth.md)）。 |
+| 访问门禁 | 未完成初始化时，除下文路径外，其它 Spring MVC 控制器 **503**（`not_initialized` / `initializing`）。静态资源不受影响。白名单与 **`MvcPublicEndpointRules#allowsWithoutInitialization`** 一致：`GET /life`、`GET /getAgreement`、`GET /getUserToken`、`GET /init/status`、`POST /init/credentials`、`POST /init`。 |
+| Bearer JWT | 初始化完成后，**全局拦截器**对 **`GET /getUserToken`**、**init 三接口**、**`GET /life`** 不要求 Bearer；其中 **`GET /life`** 仍须在头中附带 **`Authorization: Bearer <JWT>`**（由控制器自处理，见 [life.md](./life.md)）。**`GET /getAgreement`** 等须由拦截器校验 Bearer（见 [bearer-user-auth.md](./bearer-user-auth.md)）。 |
 
 ## 响应体字段（`InitResponse`，HTTP 200）
 

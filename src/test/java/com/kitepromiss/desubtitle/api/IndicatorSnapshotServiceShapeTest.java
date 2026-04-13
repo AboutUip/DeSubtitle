@@ -16,10 +16,11 @@ import com.kitepromiss.desubtitle.video.UserVideoRepository;
 import com.kitepromiss.desubtitle.video.VideoLifecycleRecorder;
 import com.kitepromiss.desubtitle.workspace.WorkspacePaths;
 
-class IndicatorControllerTest {
+/** {@link IndicatorSnapshotService#combinedSnapshot()} 与 {@code GET /life} 中 {@code indicators} 同源。 */
+class IndicatorSnapshotServiceShapeTest {
 
     @Test
-    void returnsSnapshotJsonShape() {
+    void combinedSnapshotMatchesRegistryAndLifecycle() {
         InMemoryIndicatorRegistry reg = new InMemoryIndicatorRegistry();
         reg.incrementCounter("x", 3);
         reg.setGauge("g", 2.0);
@@ -33,7 +34,7 @@ class IndicatorControllerTest {
                         Path.of("vu.lua"));
         VideoLifecycleRecorder lifecycle = new VideoLifecycleRecorder(emptyUserVideoRepository(), paths);
         IndicatorSnapshotService snapshotService = new IndicatorSnapshotService(reg, lifecycle);
-        IndicatorSnapshot s = new IndicatorController(snapshotService).getIndicator();
+        IndicatorSnapshot s = snapshotService.combinedSnapshot();
         assertEquals(3L, s.counters().get("x").longValue());
         assertEquals(2.0, s.gauges().get("g"), 0.001);
         assertTrue(s.videoExpiresInSeconds().isEmpty());

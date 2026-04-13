@@ -23,7 +23,7 @@ Authorization: Bearer <compact JWT>
 - **`GET /init/status`**、**`POST /init/credentials`**、**`POST /init`**（初始化引导）  
 - **`GET /life`**（**例外**：不经拦截器验库，但 **`LifeController` 仍要求** 请求携带 **`Authorization: Bearer …`**，自行校验；无效则刷新 token，并返回指标快照，见 [life.md](./life.md)）
 
-**不**在此列的控制器（例如 **`GET /getAgreement`**、**`GET /getIndicator`**、**`POST /uploadVideo`**）在初始化完成后**必须**携带有效 **`Authorization: Bearer <JWT>`**（由拦截器 + `UserJwtAuthenticationService` 校验）。
+**不**在此列的控制器（例如 **`GET /getAgreement`**、**`POST /uploadVideo`**）在初始化完成后**必须**携带有效 **`Authorization: Bearer <JWT>`**（由拦截器 + `UserJwtAuthenticationService` 校验）。
 
 未完成初始化时，上述非白名单路径可能先被 **`InitializationGateInterceptor`** 以 **503** 拦截，尚不会走到 Bearer 校验；一旦初始化完成且无 Bearer（且控制器不在 `allowsWithoutBearer` 中），则返回 **401**。
 
