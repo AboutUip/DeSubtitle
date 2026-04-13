@@ -12,7 +12,7 @@ import org.luaj.vm2.LuaValue;
 
 /**
  * 从 {@code config/lua/ports.lua} 读取端口并映射为 Spring {@code SpringApplication#setDefaultProperties(Map<String, Object>)} 的条目。
- * 默认属性优先级低于 {@code application.properties} 与命令行参数。
+ * 默认属性优先级低于 {@code config/yml/application.yml}（经 {@code spring.config.import} 加载）与命令行参数。
  */
 public final class StartupLuaPorts {
 

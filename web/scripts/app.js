@@ -14,6 +14,9 @@ const LIFE_HEARTBEAT_INTERVAL_MS = 12_000;
 /** 前端轮询 GET /getIndicator 刷新指标卡片。 */
 const METRICS_REFRESH_INTERVAL_MS = 10_000;
 
+/** 全局 1s 递减：上传/成品剩余秒数仅在此计时；服务端时间由 GET /life（indicators.videoLifecycles）与 GET /myVideos 矫正。 */
+const LIFECYCLE_TICK_MS = 1000;
+
 const el = (id) => document.getElementById(id);
 
 const LANE_COUNT_MIN = 1;
@@ -52,6 +55,10 @@ let blobUrlA = [];
 let blobUrlB = [];
 let lifeTimer = null;
 let metricsTimer = null;
+let lifecycleTickTimer = null;
+
+/** @type {Map<string, { upload: number, output: number | null }>} */
+const lifecycleRemainByVideoId = new Map();
 let selectedLocalFile = [];
 let mainBound = false;
 
@@ -86,6 +93,88 @@ function revokeBlob(u) {
 
 function anyLaneBusy() {
   return laneBusy.some(Boolean);
+}
+
+function clampNonNegSec(n) {
+  const x = Math.floor(Number(n));
+  return Number.isFinite(x) && x > 0 ? x : 0;
+}
+
+/** 用单条服务端生命周期写入/覆盖本地剩余秒（矫正）。 */
+function setLifecycleRemainFromServerVideo(v) {
+  if (!v?.videoId) return;
+  const out = v.desubtitleOutputExpiresInSeconds;
+  lifecycleRemainByVideoId.set(v.videoId, {
+    upload: clampNonNegSec(v.uploadExpiresInSeconds),
+    output: out == null ? null : clampNonNegSec(out),
+  });
+}
+
+/** 仅保留仍在列表中的 videoId，避免撤销后残留递减。 */
+function pruneLifecycleRemainToVideoIds(keepIds) {
+  const keep = new Set(keepIds);
+  for (const id of [...lifecycleRemainByVideoId.keys()]) {
+    if (!keep.has(id)) {
+      lifecycleRemainByVideoId.delete(id);
+    }
+  }
+}
+
+function mergeLifecycleFromLifeIndicators(life) {
+  const sub = jwtSub(getToken());
+  const rows = life?.indicators?.videoLifecycles;
+  if (!Array.isArray(rows) || !sub) {
+    return;
+  }
+  for (const v of rows) {
+    if (v.userId === sub) {
+      setLifecycleRemainFromServerVideo(v);
+    }
+  }
+}
+
+function updateVideoListLifecycleSpans() {
+  const list = el("video-list");
+  if (!list) {
+    return;
+  }
+  list.querySelectorAll(".js-video-expires").forEach((span) => {
+    const videoId = span.dataset.videoId;
+    if (!videoId) {
+      return;
+    }
+    const row = span.closest("[data-video-row-id]");
+    const st = row?.getAttribute("data-status") || "—";
+    const rec = lifecycleRemainByVideoId.get(videoId);
+    if (!rec) {
+      span.textContent = `状态 ${st} · 上传剩余 —`;
+      return;
+    }
+    const up = Math.max(0, rec.upload);
+    let text = `状态 ${st} · 上传剩余 ${up}s`;
+    if (rec.output != null) {
+      text += ` · 成品剩余 ${Math.max(0, rec.output)}s`;
+    }
+    span.textContent = text;
+  });
+}
+
+function startLifecycleTick() {
+  if (lifecycleTickTimer) {
+    clearInterval(lifecycleTickTimer);
+  }
+  const tick = () => {
+    for (const rec of lifecycleRemainByVideoId.values()) {
+      if (rec.upload > 0) {
+        rec.upload -= 1;
+      }
+      if (rec.output != null && rec.output > 0) {
+        rec.output -= 1;
+      }
+    }
+    updateVideoListLifecycleSpans();
+  };
+  lifecycleTickTimer = setInterval(tick, LIFECYCLE_TICK_MS);
 }
 
 function applyVideoProcessingLanesFromLifePayload(life) {
@@ -279,6 +368,8 @@ async function bootstrapVideoLanesFromLife() {
     if (life?.tokenRefreshed && life.token) {
       setToken(life.token);
     }
+    mergeLifecycleFromLifeIndicators(life);
+    updateVideoListLifecycleSpans();
   } catch {
     /* 使用默认路数 */
   }
@@ -605,12 +696,19 @@ async function refreshVideoList() {
     }
     repopulateLaneSelects(rows);
 
+    pruneLifecycleRemainToVideoIds(rows.map((r) => r.videoId));
+    for (const v of rows) {
+      setLifecycleRemainFromServerVideo(v);
+    }
+
     for (const v of rows) {
       const oName = v.originalFileName || v.storedFileName || "";
       const st = v.desubtitleLastStatus || "—";
 
       const row = document.createElement("div");
       row.className = "video-row";
+      row.setAttribute("data-video-row-id", v.videoId);
+      row.setAttribute("data-status", st);
       const meta = document.createElement("div");
       meta.className = "meta";
       const strong = document.createElement("strong");
@@ -620,8 +718,8 @@ async function refreshVideoList() {
       const br = document.createElement("br");
       meta.append(br);
       const span = document.createElement("span");
-      span.className = "muted";
-      span.textContent = `状态 ${st} · 上传剩余 ${v.uploadExpiresInSeconds}s`;
+      span.className = "muted js-video-expires";
+      span.dataset.videoId = v.videoId;
       meta.append(span);
 
       const rb = document.createElement("button");
@@ -654,6 +752,7 @@ async function refreshVideoList() {
       row.append(meta, rb);
       list.appendChild(row);
     }
+    updateVideoListLifecycleSpans();
     syncRevokeButtonsDisabled();
   } catch {
     if (gen !== videoListFetchGen) {
@@ -881,11 +980,15 @@ async function startMainAsync() {
     if (metricsTimer) {
       clearInterval(metricsTimer);
     }
+    if (lifecycleTickTimer) {
+      clearInterval(lifecycleTickTimer);
+    }
   });
 
   await bootstrapVideoLanesFromLife();
 
   startLifeHeartbeat();
+  startLifecycleTick();
   refreshMetrics();
   metricsTimer = setInterval(refreshMetrics, METRICS_REFRESH_INTERVAL_MS);
 }

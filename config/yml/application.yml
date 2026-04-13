@@ -1,0 +1,45 @@
+# DeSubtitle — Spring Boot 主配置（相对 JVM 工作目录，由 classpath application.properties 经 spring.config.import 加载）
+# 服务端口默认仍由 config/lua/ports.lua 注入；此处 server.port 或命令行可覆盖。
+
+spring:
+  application:
+    name: DeSubtitle
+
+  # 静态站点由 Java 从仓库根目录 web/ 提供；关闭 Boot 默认 classpath 静态映射（见 WebDirectoryResourceConfig）
+  web:
+    resources:
+      add-mappings: false
+
+  # SQLite：库文件位于项目下 data/ 根层
+  datasource:
+    url: jdbc:sqlite:data/desubtitle.db
+    driver-class-name: org.sqlite.JDBC
+
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  # POST /uploadVideo 单文件与整请求上限（可按部署调整）
+  servlet:
+    multipart:
+      max-file-size: 512MB
+      max-request-size: 512MB
+
+desubtitle:
+  # 扫描并删除过期上传视频（expires_at），毫秒
+  video:
+    lifecycle-purge-interval-ms: 15000
+
+  # GET /life 下发 videoProcessingLanes（1–8，超出由后端截断）
+  ui:
+    video-processing-lanes: 3
+
+  # 阿里云 EraseVideoSubtitles 擦除区域：bottom=不传参；full=全画面 0,0,1,1
+  aliyun:
+    subtitle-erase-region: full
+
+  # 可选：独立前端开发服务器跨域来源（逗号分隔）。留空不启用 CORS。
+  # cors:
+  #   allowed-origins: "http://localhost:5173,http://127.0.0.1:5173"

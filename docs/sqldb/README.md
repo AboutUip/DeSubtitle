@@ -9,5 +9,5 @@
 | 主题 | 路径 |
 |------|------|
 | 并发门闩与访问约定 | [../architectuure/sqlite-access.md](../architectuure/sqlite-access.md) |
-| 数据源与 DDL 策略 | 仓库根 `src/main/resources/application.properties`（`spring.datasource.url`、`spring.jpa.hibernate.ddl-auto`） |
+| 数据源与 DDL 策略 | 仓库根 `config/yml/application.yml`（`spring.datasource.url`、`spring.jpa.hibernate.ddl-auto`） |
 | AccessKey 存储责任 | [../reference/aliyun-credentials-storage.md](../reference/aliyun-credentials-storage.md) |

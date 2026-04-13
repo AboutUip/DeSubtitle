@@ -4,11 +4,11 @@
 
 ## 文件作用
 
-在 Spring 启动前由 `StartupLuaPorts` 解析，将端口写入 `SpringApplication.setDefaultProperties`（优先级**低于** `application.properties` 与命令行参数）。
+在 Spring 启动前由 `StartupLuaPorts` 解析，将端口写入 `SpringApplication.setDefaultProperties`（优先级**低于** `config/yml/application.yml` 与命令行参数）。
 
 ## 文件缺失时
 
-不注入任何端口相关默认项，完全沿用 Spring 与 `application.properties` 的配置。
+不注入任何端口相关默认项，完全沿用 Spring 与 `config/yml/application.yml` 的配置。
 
 ## 配置项
 

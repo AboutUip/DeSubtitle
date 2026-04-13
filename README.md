@@ -15,7 +15,7 @@
 - **视频上传与配额**：多路并行处理路数由后端配置下发，上传落盘与过期清理策略可由 `config` 调整。
 - **去字幕流水线**：调用阿里云异步擦除字幕，轮询结果并下载成品至本地 `data/desubtitle/`。
 - **用户与鉴权**：匿名用户 JWT（Bearer），初始化向导配置阿里云凭证（非调试环境写入约定存储；密钥禁止进仓库配置）。
-- **单页前端**：仓库根目录 `web/` 由 Java 进程映射，无需单独静态服务器即可访问（跨域开发场景见 `application.properties` 注释）。
+- **单页前端**：仓库根目录 `web/` 由 Java 进程映射，无需单独静态服务器即可访问（跨域开发场景见 `config/yml/application.yml` 注释）。
 - **用户协议文案**：`GET /getAgreement` 读取 `config/json/agreement.json` 中的 `text`，用于前端展示。
 
 更细的 HTTP 端点、字段与行为见 [docs/api/README.md](docs/api/README.md)。
@@ -74,7 +74,7 @@ Windows 将 `./mvnw` 换为 `.\mvnw.cmd`。默认 HTTP 端口由 [config/lua/por
 ## 配置与文档入口
 
 - **端口与前端端口**：`config/lua/ports.lua`
-- **上传大小、并行路数、擦除区域等**：`application.properties` 与对应 `config/lua` 文档（索引：[docs/config/README.md](docs/config/README.md)）
+- **上传大小、并行路数、擦除区域等**：`config/yml/application.yml` 与对应 `config/lua` 文档（索引：[docs/config/README.md](docs/config/README.md)）
 - **用户可见协议正文**：`config/json/agreement.json`（字段 `text`），说明见 [docs/config/json-agreement.md](docs/config/json-agreement.md)
 - **数据库表结构**：[docs/sqldb/schema.md](docs/sqldb/schema.md)
 

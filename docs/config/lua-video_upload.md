@@ -21,4 +21,4 @@
 
 ## 与实现的对齐
 
-`LuaConfigLoader`；`VideoUploadLuaSettings`、`VideoUploadService`、`SendToDeSubtitleService`、`VideoLifecycleRecorder`、`UserVideoExpiresAtSqliteMigration`、`UserVideoDesubtitleSqliteMigration`（旧库补列）。清理调度间隔见 `application.properties` 中 **`desubtitle.video.lifecycle-purge-interval-ms`**。单文件与请求体大小另见 `spring.servlet.multipart.*`。
+`LuaConfigLoader`；`VideoUploadLuaSettings`、`VideoUploadService`、`SendToDeSubtitleService`、`VideoLifecycleRecorder`、`UserVideoExpiresAtSqliteMigration`、`UserVideoDesubtitleSqliteMigration`（旧库补列）。清理调度间隔见 `config/yml/application.yml` 中 **`desubtitle.video.lifecycle-purge-interval-ms`**。单文件与请求体大小另见 `spring.servlet.multipart.*`（同文件）。

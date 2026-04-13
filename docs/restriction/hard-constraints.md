@@ -2,7 +2,7 @@
 
 ## 1. 密钥与配置
 
-- **禁止**将阿里云 AccessKey、密码、令牌写入仓库内任何已跟踪文件（含 `application.properties`、`*.yml`、`config/lua/*.lua`、`config/json/*.json`、前端脚本、测试资源）。
+- **禁止**将阿里云 AccessKey、密码、令牌写入仓库内任何已跟踪文件（含 `config/yml/*.yml`、`src/main/resources/application.properties`、`config/lua/*.lua`、`config/json/*.json`、前端脚本、测试资源）。
 - 凭证以**环境变量**或部署侧密钥管理为准；与阿里云 Java SDK 常见约定一致时使用 `ALIBABA_CLOUD_ACCESS_KEY_ID`、`ALIBABA_CLOUD_ACCESS_KEY_SECRET`（名称以官方文档为准）。若通过本应用 **`POST /init/credentials`** 写入 SQLite，则为**明文**落盘，安全责任见 [../reference/aliyun-credentials-storage.md](../reference/aliyun-credentials-storage.md)。
 
 ## 2. 仓库与文件

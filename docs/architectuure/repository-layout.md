@@ -42,15 +42,16 @@
 |--------|------|------|
 | `config/json/` | `.json` | **可改**：应用可读写，承载运行期可调参数与持久化需求（可多文件按域拆分）。仓库内约定主文件为 `runtime.json`（如初始化完成标记等）。 |
 | `config/lua/` | `.lua` | **仅可读**：面向人的说明与默认值参考，支持注释；**不**作为应用写回目标。其中 `ports.lua` 在 Spring 启动前由 `StartupLuaPorts` 读取，注入 `server.port` 与 `desubtitle.frontend.port`。 |
+| `config/yml/` | `.yml` | **只读部署侧**：Spring Boot 主配置（如 `application.yml`）。由 `src/main/resources/application.properties` 中 **`spring.config.import=file:./config/yml/application.yml`** 从工作目录加载；路径相对 JVM `user.dir`。 |
 
 - **Lua 配置项与注释（强制）**：`return { ... }` 中**每一个**配置键（含嵌套表内作为独立配置含义的键）**必须**附有**专属于该键**的注释：优先写在该键**紧邻的上一行** `-- …`，或键**同一行行尾** `-- …`；禁止仅用文件头笼统描述代替逐项注释。见 [../restriction/code-conventions.md](../restriction/code-conventions.md) §4。
-- 合并策略（先读 Lua 再叠 JSON、或反之）在业务代码中实现；Spring `application.properties` 仍可用于启动级开关。
-- **禁止**在 `json`/`lua` 中存放密钥；AccessKey 等按 [../restriction/hard-constraints.md](../restriction/hard-constraints.md) §1 使用环境变量。
-- 新增键名时同步文档或模块注释；**每个** `*.lua` / `*.json` 在 `docs/config/` 下有独立说明文档，并在 [../config/README.md](../config/README.md) 索引表中登记（命名 `lua-<文件名>.md` / `json-<文件名>.md`）。
+- 合并策略（先读 Lua 再叠 JSON、或反之）在业务代码中实现；Spring 层键值以 **`config/yml/application.yml`** 为主，classpath 仅保留 `spring.config.import` 引导项。
+- **禁止**在 `json`/`lua`/`yml` 中存放密钥；AccessKey 等按 [../restriction/hard-constraints.md](../restriction/hard-constraints.md) §1 使用环境变量。
+- 新增键名时同步文档或模块注释；**每个** `*.lua` / `*.json` / `config/yml/*.yml` 在 `docs/config/` 下有独立说明文档，并在 [../config/README.md](../config/README.md) 索引表中登记（命名 `lua-<文件名>.md` / `json-<文件名>.md` / `yml-<文件名>.md`）。
 
 ## `data/`（@data）
 
-- 存放 **SQLite `.db` 文件**（路径由 `application.properties` 等配置，且文件位于 `data/` **根层**，不建子目录存放库文件）。
+- 存放 **SQLite `.db` 文件**（路径由 `config/yml/application.yml` 中 `spring.datasource.url` 等配置，且文件位于 `data/` **根层**，不建子目录存放库文件）。
 - **`data/videos/`**：`POST /uploadVideo` 落盘的源视频；**`data/desubtitle/`**：`POST /sendToDeSubtitle` 从阿里云结果 URL 下载的去字幕后视频（随机文件名，保留期见 `video_upload.lua`）。
 - 其它 **由 Java 在运行时写入或维护的文档类产物** 仍归本目录，具体规则随功能补充。
 - **是否提交 Git**：以仓库根 `.gitignore` 与用户约定为准；运行前若需 `data/` 目录，由 Java 启动逻辑或本地手动创建。

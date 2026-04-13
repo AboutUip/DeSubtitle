@@ -10,7 +10,7 @@
 | 配额与保留 | **`max_videos_per_user`**（默认 3）超限返回 **409** `video_quota_exceeded`。**`video_retention_minutes`**（默认 5）决定每条记录的过期时刻。配置说明见 [../config/lua-video_upload.md](../config/lua-video_upload.md)。 |
 | 其它错误 | **400** `empty_file`；**401** `missing_user_context`；**500** `upload_failed`（落盘或持久化异常）。 |
 | 后缀规则 | 仅当**最后一个点之前的主名中不含其它点**、且后缀为纯字母数字（如 `.mp4`、`.mov`）且总长合理时保留；否则落盘为无后缀 UUID 文件名（实现见 `VideoUploadService#safeExtension`）。 |
-| 配置 | 单文件与总请求体上限见 `application.properties` 中 **`spring.servlet.multipart.*`**（默认 512MB）。 |
+| 配置 | 单文件与总请求体上限见 `config/yml/application.yml` 中 **`spring.servlet.multipart.*`**（默认 512MB）。 |
 | 实现锚点 | `VideoUploadController`、`VideoUploadService`、`VideoLifecycleRecorder`、`UserVideoExpiresAtSqliteMigration`、`UserVideoEntity`、`UserVideoRepository`、`VideoUploadLuaSettings` |
 
 目录索引见 [README.md](./README.md)。
